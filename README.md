@@ -1,140 +1,274 @@
-# 静态随机图 API (Static Random Pic API)
+# Pic API
 
-这是一个纯静态的随机图 API 解决方案。它不依赖任何后端逻辑（如 Cloudflare Workers 或 Python 服务器），完全依靠构建时生成的静态资源和客户端 JavaScript 实现随机图功能。
+一个纯粹的静态随机图 API。不依赖任何客户端 JavaScript，只通过服务端 302 跳转返回随机图片。
 
-## 1. 原理
-构建脚本 (`build.js`) 会扫描 `ri/h` (横屏) 和 `ri/v` (竖屏) 目录下的图片，将它们随机重命名为数字序列 (1.webp, 2.webp...) 并输出到 `dist` 目录。同时生成**一个** JavaScript 文件 (`random.js`)，包含图片总数和随机逻辑。客户端加载 JS 后，会自动查找带有特殊属性的标签并插入图片链接。
+## 特性
 
-## 2. 构建 (Build)
-在本地运行构建脚本以生成 `dist` 目录：
+- **纯 API**：无需在页面中引入任何 JS，直接通过 URL 调用。
+- **UA 自适应**：`/random/ua` 根据 User-Agent 自动返回横屏或竖屏图片。
+- **横竖屏分离**：`/random/h` 返回横屏图，`/random/v` 返回竖屏图。
+- **静态部署**：构建后可直接部署到 EdgeOne Makers、Cloudflare Pages、Vercel、Nginx 等。
+- **内置画廊**：构建后生成 `gallery.html`，支持 All / H / V 页内切换、懒加载、骨架屏、点击查看大图。
 
-```bash
-node build.js
-```
+## 快速开始
 
-构建完成后，`dist` 目录即为最终产物，可直接部署到任何静态托管服务 (GitHub Pages, Vercel, Cloudflare Pages, Nginx 等)。
+### 1. 准备图片
 
-## 3. 配置 (Configuration)
-你可以配置生成的图片 URL 前缀（域名）。
+将横屏图片放入 `ri/h/`，竖屏图片放入 `ri/v/`。
 
-### 方法 A: 配置文件 (推荐)
-修改项目根目录下的 `config.json`：
+### 2. 配置域名
+
+修改 `config.json`：
+
 ```json
 {
-    "domain": "https://your-domain.com"
+    "domain": "https://pic.u1u.top"
 }
 ```
 
-### 方法 B: 环境变量
-构建时传入环境变量 `DOMAIN` (优先级高于 config.json)：
+或使用环境变量（优先级更高）：
+
 ```bash
-# Linux/Mac
+# Linux / Mac
 export DOMAIN="https://cdn.example.com"
 node build.js
 
-# Windows (PowerShell)
-$env:DOMAIN="https://cdn.example.com"
+# Windows PowerShell
+$env:DOMAIN="https://cdn.example.com"; node build.js
+```
+
+### 3. 构建
+
+```bash
 node build.js
 ```
 
-如果不配置，默认为空，图片路径将是相对路径 (e.g. `/ri/h/1.webp`)。
+构建产物输出到 `dist/` 目录。
 
-## 4. 客户端使用 (Client-Side Usage)
-在你的 HTML 页面中引入生成的 JS 文件即可。
+### 4. 部署到 EdgeOne Makers（推荐）
 
-### 引入脚本
-只需引入一个文件：
-```html
-<script src="https://your-domain.com/random.js"></script>
+本项目已配置 `edgeone.json`，可直接使用 EdgeOne CLI 部署。
+
+#### 方式一：CLI 自动构建部署（推荐）
+
+```bash
+# 1. 安装 EdgeOne CLI
+npm install -g edgeone
+
+# 2. 登录（按提示选择 Global / China）
+edgeone login
+
+# 3. 一键构建并部署
+edgeone makers deploy -n static-randompic
 ```
 
-### 特性说明
-*   **会话保持 (Session Persistence)**: 在同一会话期间，横屏和竖屏图片会保持不变（不会每次刷新都变，除非重新打开页面或新开会话）。
-*   **Swup 支持**: 内置对 Swup 页面切换的完美支持 (`content:replace` hook)。
-*   **预加载**: 背景图会自动预加载，防止闪烁。
-*   ***update**: 会根据user-agent判断是否是移动端，如果是移动端，就会去加载竖屏图片。*
+CLI 会自动读取 `edgeone.json`：
+- 执行 `npm install`
+- 执行 `node build.js`
+- 将 `dist/` 目录部署到 EdgeOne Makers
 
-### 使用方法
+#### 方式二：本地构建后手动部署
 
-#### 1. 背景图片 (Background Image) - 定制版
-这是根据需求定制的逻辑，针对 ID 为 `bg-box` 的元素进行特殊处理。
-**逻辑**：JS 会自动寻找 `id="bg-box"` 的元素，预加载一张横屏随机图，成功后设置背景，并添加 `loaded` 类名，同时设置 CSS 变量。
+```bash
+# 1. 本地构建
+node build.js
 
-```html
-<div id="bg-box" class="transition-opacity duration-500 opacity-0 loaded:opacity-100">
-    <!-- 内容 -->
-</div>
+# 2. 部署 dist/ 目录
+edgeone makers deploy ./dist -n static-randompic
 ```
 
-***定制版V2** - 适配WordPress 子比主题*
+#### 方式三：Pages Drop 直接上传
 
-当 `#bg-box` 元素存在时，脚本会优先处理它。但是如果他不存在时，会去body的class元素中查找是否有`wp-theme-zibll`类名。如果有，就会去处理这个类名的元素。
+1. 先本地构建：`node build.js`
+2. 访问 [EdgeOne Pages Drop](https://pages.edgeone.ai/drop)
+3. 将 `dist/` 文件夹拖拽上传
+4. 设置域名，点击部署
 
-**效果：**
-*   **预加载 (Preloading)**: 只有当图片完全下载后，才会设置背景图。
-*   **Loaded Class**: 图片加载完成后，元素会被添加 `.loaded` 类名。
-*   **CSS 变量**: 加载完成后会自动更新 `--card-bg` 和 `--float-panel-bg` 变量。
-*   **背景禁用**: 支持通过 localStorage 的 `theme-bg-disabled` 键禁用背景图。
-*   **会话缓存**: 同一会话内背景图保持一致，避免频繁切换。
+#### CI/CD 部署（GitHub Actions）
 
-**背景设置方案：**
-*   **方案1**：直接设置 `#bg-box` 的背景图
-*   **方案2**：检测到 `wp-theme-zibll` 主题时，增强背景样式（居中、不重复、固定、覆盖）
-*   **方案3**：回退到 `data-random-bg` 属性
+在仓库设置中添加 `EDGEONE_API_TOKEN`，然后创建 `.github/workflows/deploy.yml`：
 
-#### 2. 通用背景图片 (Generic Background) - 备用
-如果没有找到 `#bg-box`，脚本会回退到查找带有 `data-random-bg` 属性的元素。
-```html
-<div data-random-bg="h">横屏背景</div>
-<div data-random-bg="v">竖屏背景</div>
+```yaml
+name: Deploy to EdgeOne
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: node build.js
+      - run: npx edgeone makers deploy ./dist -n static-randompic -t ${{ secrets.EDGEONE_API_TOKEN }} -e production
 ```
 
-#### 3. 普通图片 (img 标签)
-使用 `alt` 属性来指定随机图类型。
-```html
-<!-- 横屏随机图 -->
-<img alt="random:h" title="我的随机图片">
+> 注意：中国大陆用户需登录控制台获取 API Token；海外用户可使用 `--anonymous` 匿名部署，但预览链接 1 小时内需认领。
 
-<!-- 竖屏随机图 -->
-<img alt="random:v" style="width: 200px;">
+## 更新与重新部署
+
+### 更新图片
+
+1. 替换或新增图片到 `ri/h/`（横屏）和 `ri/v/`（竖屏）。
+2. 重新构建：
+
+```bash
+node build.js
 ```
 
-### 手动调用 (高级)
-JS 暴露了全局函数，你可以手动获取随机 URL：
+3. 重新部署（以 EdgeOne CLI 为例）：
+
+```bash
+edgeone makers deploy -n static-randompic
+```
+
+> 注意：如果直接拖拽上传，需要重新上传最新的 `dist/` 目录。
+
+### 更新代码
+
+1. 修改源码，例如 `build.js`、`edgeone.json` 等。
+2. 重新构建：
+
+```bash
+node build.js
+```
+
+3. 重新部署：
+
+```bash
+edgeone makers deploy -n static-randompic
+```
+
+### 本地预览
+
+部署前可以先本地预览：
+
+```bash
+node serve.js
+```
+
+然后打开 http://localhost:8080/ 查看效果。
+
+## API 端点
+
+| 端点 | 说明 | 示例 |
+|------|------|------|
+| `/random/ua` | 根据 UA 自动适配横屏/竖屏 | `https://pic.u1u.top/random/ua` |
+| `/random/h` | 随机横屏图 | `https://pic.u1u.top/random/h` |
+| `/random/v` | 随机竖屏图 | `https://pic.u1u.top/random/v` |
+
+## 跨域（CORS）
+
+`/random/*` 端点已默认允许所有域名跨域（`Access-Control-Allow-Origin: *`），可被任意前端通过 `fetch` 调用：
+
 ```javascript
-// 获取横屏随机图 URL (会话内保持一致)
-var urlH = window.getRandomPicH(); 
-console.log(urlH);
-
-// 获取竖屏随机图 URL (会话内保持一致)
-var urlV = window.getRandomPicV();
-console.log(urlV);
-
-// 设置背景禁用状态
-window.setBackgroundDisabled(true);  // 禁用背景
-window.setBackgroundDisabled(false); // 启用背景
-
-// 强制刷新随机背景（更换壁纸）
-window.refreshRandomBackground();
+fetch('https://pic.u1u.top/random/h')
+  .then(res => console.log(res.headers.get('location'))); // 实际图片地址
 ```
 
-## 5. 画廊页面 (Gallery Page)
-构建脚本会自动生成一个静态画廊页面 `dist/gallery.html`。
-该页面采用瀑布流布局 (Waterfall Layout) 和懒加载 (Lazy Loading) 技术，展示所有的随机图片。
-你可以直接访问 `/gallery.html` 来查看所有图片。
+响应头包含：
 
-## 6. 目录结构
-*   `ri/` - 图片源目录
-    *   `ri/h/` - 放入横屏图片
-    *   `ri/v/` - 放入竖屏图片
-*   `dist/` - 构建产物 (部署这个文件夹)
-    *   `ri/` - 处理后的图片
-    *   `random.js` - **核心逻辑文件**
-    *   `index.html` - 演示页面
-    *   `gallery.html` - 画廊页面
-*   `build.js` - 构建脚本
-*   `config.json` - 配置文件
+```http
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+Access-Control-Max-Age: 86400
+```
 
-## 7. 注意事项
-*   每次添加新图片后，都需要重新运行 `node build.js`。
-*   构建会清空 `dist` 目录，请勿在 `dist` 中直接修改文件。
+如果需要在 `<canvas>` 中绘制图片，需要给图片资源 `/ri/*` 也开启 CORS：
+
+1. 修改 `edgeone.json` 中 `/ri/*` 的 headers：
+
+```json
+{
+  "source": "/ri/*",
+  "headers": [
+    { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" },
+    { "key": "Access-Control-Allow-Origin", "value": "*" },
+    { "key": "Vary", "value": "Origin" }
+  ]
+}
+```
+
+2. 修改后重新 build 并部署。
+3. HTML 中图片标签需要加 `crossorigin` 属性：
+
+```html
+<img src="https://pic.u1u.top/random/h" crossorigin="anonymous" alt="random">
+```
+
+## 使用示例
+
+直接在 HTML 中使用：
+
+```html
+<img src="https://pic.u1u.top/random/ua" alt="random">
+```
+
+作为背景图 CSS：
+
+```css
+.banner {
+    background-image: url('https://pic.u1u.top/random/h');
+    background-size: cover;
+}
+```
+
+## 目录结构
+
+```
+.
+├── ri/                     # 图片源目录
+│   ├── h/                  # 横屏图片
+│   └── v/                  # 竖屏图片
+├── functions/              # Cloudflare Pages Functions
+│   └── random/
+│       ├── h.js
+│       ├── v.js
+│       └── ua.js
+├── edge-functions/         # EdgeOne 边缘函数
+│   └── random/
+│       ├── h.js
+│       ├── v.js
+│       └── ua.js
+├── dist/                   # 部署产物
+│   ├── ri/
+│   │   ├── h/
+│   │   └── v/
+│   ├── counts.json
+│   ├── index.html          # API 文档页
+│   ├── gallery.html        # 画廊页
+│   └── edge-functions/     # EdgeOne 边缘函数（构建输出）
+├── build.js                # 构建脚本
+├── config.json             # 域名配置
+├── edgeone.json            # EdgeOne Makers 配置
+├── package.json
+└── README.md
+```
+
+## 版本控制
+
+`dist/` 是构建产物，已加入 `.gitignore`，不需要提交到 Git。每次修改源码或图片后，本地运行 `node build.js` 生成即可。
+
+`.edgeone/` 是 EdgeOne CLI 本地配置目录，也已加入 `.gitignore`。
+
+如果你之前已经把 `dist/` 提交到了 Git，可以用以下命令将其从版本控制中移除（保留本地文件）：
+
+```bash
+git rm -r --cached dist
+git add .gitignore
+git commit -m "chore: ignore dist build output"
+```
+
+## 注意事项
+
+- 每次添加新图片后都需要重新运行 `node build.js`。
+- 构建会清空 `dist/` 目录，请勿在其中直接修改文件。
+- 接口返回 `302` 临时重定向，并附加 `no-cache` 头，避免被浏览器缓存。
+
+## License
+
+ISC

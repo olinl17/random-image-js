@@ -1,13 +1,25 @@
+# Build output
+dist/
+
+# EdgeOne CLI local config
+.edgeone/
+
 # Dependencies
 node_modules/
 
-# Build Output
-# dist/
+# Logs
+*.log
+npm-debug.log*
 
-# Environment
+# OS
 .env
 .DS_Store
 Thumbs.db
 
-# Config (optional, but good practice if it contains secrets - though domain is likely public)
-# config.json
+# IDE
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
