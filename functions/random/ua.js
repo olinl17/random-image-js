@@ -43,7 +43,7 @@ export async function onRequest(context) {
         }
 
         const idx = Math.floor(Math.random() * total) + 1;
-        const host = (request && request.headers && request.headers.get('host')) || 'pic.u1u.top';
+        const host = (request && request.headers && request.headers.get('host')) || 'pic.olinl.com';
         const proto = (request && request.headers && request.headers.get('x-forwarded-proto')) || 'https';
         const target = proto + '://' + host + '/ri/' + type + '/' + idx + '.webp';
 

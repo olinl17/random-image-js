@@ -22,7 +22,7 @@
 
 ```json
 {
-    "domain": "https://pic.u1u.top"
+    "domain": "https://pic.olinl.com"
 }
 ```
 
@@ -156,16 +156,16 @@ node serve.js
 
 | 端点 | 说明 | 示例 |
 |------|------|------|
-| `/random/ua` | 根据 UA 自动适配横屏/竖屏 | `https://pic.u1u.top/random/ua` |
-| `/random/h` | 随机横屏图 | `https://pic.u1u.top/random/h` |
-| `/random/v` | 随机竖屏图 | `https://pic.u1u.top/random/v` |
+| `/random/ua` | 根据 UA 自动适配横屏/竖屏 | `https://pic.olinl.com/random/ua` |
+| `/random/h` | 随机横屏图 | `https://pic.olinl.com/random/h` |
+| `/random/v` | 随机竖屏图 | `https://pic.olinl.com/random/v` |
 
 ## 跨域（CORS）
 
 `/random/*` 端点已默认允许所有域名跨域（`Access-Control-Allow-Origin: *`），可被任意前端通过 `fetch` 调用：
 
 ```javascript
-fetch('https://pic.u1u.top/random/h')
+fetch('https://pic.olinl.com/random/h')
   .then(res => console.log(res.headers.get('location'))); // 实际图片地址
 ```
 
@@ -197,7 +197,7 @@ Access-Control-Max-Age: 86400
 3. HTML 中图片标签需要加 `crossorigin` 属性：
 
 ```html
-<img src="https://pic.u1u.top/random/h" crossorigin="anonymous" alt="random">
+<img src="https://pic.olinl.com/random/h" crossorigin="anonymous" alt="random">
 ```
 
 ## 使用示例
@@ -205,14 +205,14 @@ Access-Control-Max-Age: 86400
 直接在 HTML 中使用：
 
 ```html
-<img src="https://pic.u1u.top/random/ua" alt="random">
+<img src="https://pic.olinl.com/random/ua" alt="random">
 ```
 
 作为背景图 CSS：
 
 ```css
 .banner {
-    background-image: url('https://pic.u1u.top/random/h');
+    background-image: url('https://pic.olinl.com/random/h');
     background-size: cover;
 }
 ```
